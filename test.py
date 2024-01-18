@@ -25,9 +25,6 @@ class ZaberDevice:
         self.device.set_limit_max(100)
 
 
-
-
-
 with Connection.open_serial_port("/dev/ttyUSB0") as connection:
     # device_list = connection.detect_devices()
     # print("Detected {} devices".format(len(device_list)))
