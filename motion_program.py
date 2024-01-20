@@ -4,9 +4,20 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 from scipy import signal
+from pynput import keyboard
+
 
 def current_milli_time():
     return round(time.time() * 1000)
+
+def on_press(key):
+    if key.char == 'q':
+        return False
+
+def find_nearest_idx(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx
 
 def main():
     # Create a device object
@@ -30,7 +41,7 @@ def main():
     omega = 2*np.pi/T
 
     # Sine wave trajectory
-    t_traj = np.arange(START_TIME, END_TIME, SAMPLE_PERIOD)
+    t_traj = np.arange(START_TIME, END_TIME+SAMPLE_PERIOD, SAMPLE_PERIOD)
     p_des = np.sin(omega*t_traj) + np.sin(omega*t_traj/2 + 2)
     p_des = p_des - p_des[0]
     dp_des = np.gradient(p_des, SAMPLE_PERIOD)
@@ -55,7 +66,11 @@ def main():
     p = [LSM.get_position()]
     t = [0]
     u = [0]
-    while (current_milli_time() - start) < END_TIME*1000:
+
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
+
+    while listener.running:
         # Get current time in milliseconds
         t.append(current_milli_time() - start) # index of trajectory
 
@@ -67,16 +82,23 @@ def main():
                 Ki * (1) + 
                 Kd * (dp_des[t[-1] % l_traj] - (p[-1] - p[-2]) / SAMPLE_PERIOD))
 
-
         print(f't: {t[-1]}, p: {p[-1]}, u: {u[-1]}', end='\r')
-        
-        LSM.move_velocity(u[-1])
 
+        LSM.move_velocity(u[-1])
+    
     LSM.stop()
     print('\n')
 
     t = np.asarray(t)/1000 # convert to seconds
     p = np.asarray(p) # convert to numpy array
+    u = np.asarray(u) # convert to numpy array
+
+    if t[-1] > t_traj[-1]:
+        t_traj = np.arange(START_TIME, t[-1], SAMPLE_PERIOD)
+        p_des = np.tile(p_des, len(t_traj) // len(p_des) + 1)[:len(t_traj)]
+    else:
+        t_traj = t_traj[:find_nearest_idx(t_traj, t[-1])+1]
+        p_des = p_des[:find_nearest_idx(t_traj, t[-1])+1]
 
     fig, ax = plt.subplots(2, 1)
     ax[0].plot(t, p, label="Position")
