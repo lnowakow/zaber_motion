@@ -2,15 +2,21 @@ from zaber_motion.binary import Connection, CommandCode
 from zaber_motion import Units
 import time
 import numpy as np
+import string
 
+LSM_DEVICE_MODEL = {
+    "big": 20,
+    "small": 4
+}
 
 class ZaberLSMDevice:
-    def __init__ (self, port: str = "/dev/ttyUSB0"):
+    def __init__ (self, port: str = "/dev/ttyUSB0", device_num: int = 0, model: str = "small"):
         self.__port = port
+        self.__device_num = device_num
         self.__connection = None
         self.__device = None
 
-        self.ABS_MAX_SPEED = 4 # mm/s
+        self.ABS_MAX_SPEED = LSM_DEVICE_MODEL[model] # mm/s
 
         self.setup()
 
@@ -22,7 +28,7 @@ class ZaberLSMDevice:
         self.__connection = Connection.open_serial_port(self.__port)
         device_list = self.__connection.detect_devices()
         print("Detected {} devices".format(len(device_list)))
-        self.__device = device_list[0]
+        self.__device = device_list[self.__device_num]
 
         # Set Home and Target Speed
         self.__device.generic_command_with_units(CommandCode.SET_HOME_SPEED, 4, Units.VELOCITY_MILLIMETRES_PER_SECOND)

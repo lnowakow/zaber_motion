@@ -21,7 +21,7 @@ def find_nearest_idx(array, value):
 
 def main():
     # Create a device object
-    LSM = z.ZaberLSMDevice()
+    LSM = z.ZaberLSMDevice(device_num=0)
 
     # Home the device
     # if LSM.get_position() != 0:
@@ -46,7 +46,7 @@ def main():
     p_des = p_des - p_des[0]
     dp_des = np.gradient(p_des, SAMPLE_PERIOD)
     max_v = np.max(np.abs(dp_des))
-    if max_v > LSM.ABS_MAX_SPEED:
+    if max_v+100 > LSM.ABS_MAX_SPEED:
         p_des = p_des* LSM.ABS_MAX_SPEED / max_v
         dp_des = np.gradient(p_des, SAMPLE_PERIOD)
     p_des = START_POSITION + p_des
